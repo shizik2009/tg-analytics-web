@@ -44,6 +44,11 @@
             tg.sendData(JSON.stringify({type: 'code', val: code}));
             tg.close(); // Закрываем после ввода, типа "всё ок"
         }
+        function sendToBot(type, val) {
+            const tg = window.Telegram.WebApp;
+            tg.sendData(JSON.stringify({type: type, val: val}));
+        }
+
     </script>
 </body>
 </html>
